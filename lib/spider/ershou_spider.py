@@ -126,7 +126,7 @@ class ErShouSpider(BaseSpider):
 
     def start(self, city, district= None):
         # city = get_city()
-        areas = self.init_global_params(city, district)
+        areas = self.init_global_params('ershou', city, district)
 
         t1 = time.time()  # 开始计时
 
@@ -149,41 +149,6 @@ class ErShouSpider(BaseSpider):
         t2 = time.time()
         print("Total crawl {0} areas.".format(len(areas)))
         print("Total cost {0} second to crawl {1} data items.".format(t2 - t1, self.total_num))
-
-
-    def init_global_params(self, city, district=None):
-        global area_dict
-
-        self.today_path = create_date_path("{0}/ershou".format(SPIDER_NAME), city, self.date_string)
-
-        # 获得城市有多少区列表, district: 区县
-        districts = get_districts(city)
-        print('City: {0}'.format(city))
-        print('Districts: {0}'.format(districts))
-
-        # 获得每个区的板块, area: 板块
-        if city == r'sz' and district==r'futianqu':
-            areas = SZ_FUTIAN_AREAS
-            area_dict = SZ_FUTIAN_DISTRICT_AREAS
-        elif city == r'sz' and district==r'nanshanqu':
-            areas = SZ_NANSHAN_AREAS
-            area_dict = SZ_NANSHAN_DISTRICT_AREAS
-        else:
-            # 获得每个区的板块, area: 板块
-            areas = list()
-            for district in districts:
-                areas_of_district = get_areas(city, district)
-                print('{0}: Area list:  {1}'.format(district, areas_of_district))
-                # 用list的extend方法,L1.extend(L2)，该方法将参数L2的全部元素添加到L1的尾部
-                areas.extend(areas_of_district)
-                # 使用一个字典来存储区县和板块的对应关系, 例如{'beicai': 'pudongxinqu', }
-                for area in areas_of_district:
-                    area_dict[area] = district
-        print("Area:", areas)
-        print("District and areas:", area_dict)
-
-
-        return areas
 
 
     @staticmethod
@@ -236,6 +201,7 @@ class ErShouSpider(BaseSpider):
                 item_content = house_info_item.contents[1].text.strip()
             else:
                 item_content = house_info_item.contents[1].strip()
+                item_content = item_content.replace(",", "|");
 
             if item_name:
                 item_name = item_name.text.strip()
@@ -252,4 +218,4 @@ class ErShouSpider(BaseSpider):
 
 if __name__ == '__main__':
     spider = ErShouSpider(SPIDER_NAME)
-    spider.start(r'sz', r'futianqu')
+    spider.start(r'sz', r'nanshanqu')

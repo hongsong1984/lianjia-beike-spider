@@ -4,23 +4,27 @@
 # 此代码仅供学习与交流，请勿用于商业用途。
 # 爬虫基类
 # 爬虫名常量，用来设置爬取哪个站点
+import copy
 
 import threading
+from conf.config import SPIDER_NAME
+from lib.zone.area import get_areas
 from lib.zone.city import lianjia_cities, beike_cities
 from lib.utility.date import *
 import lib.utility.version
 import random
+from conf.const import SZ_FUTIAN_DISTRICT_AREAS, SZ_NANSHAN_AREAS, SZ_NANSHAN_DISTRICT_AREAS, SZ_FUTIAN_AREAS, \
+    LIANJIA_SPIDER, BEIKE_SPIDER
+from lib.utility.path import *
+from lib.zone.district import get_districts
+from lib.zone.district import area_dict
 
-thread_pool_size = 2
+thread_pool_size = 1
 
 # 防止爬虫被禁，随机延迟设定
 # 如果不想delay，就设定False，
 # 具体时间可以修改random_delay()，由于多线程，建议数值大于10
 RANDOM_DELAY = False
-LIANJIA_SPIDER = "lianjia"
-BEIKE_SPIDER = "ke"
-# SPIDER_NAME = LIANJIA_SPIDER
-SPIDER_NAME = BEIKE_SPIDER
 
 
 class BaseSpider(object):
@@ -70,3 +74,38 @@ class BaseSpider(object):
         :return: 中文
         """
         return self.cities.get(en, None)
+
+    def init_global_params(self, type, city, district=None):
+        global area_dict
+        print(id(area_dict))
+
+        self.today_path = create_date_path("{0}/{1}".format(SPIDER_NAME, type), city, self.date_string)
+
+        # 获得城市有多少区列表, district: 区县
+        districts = get_districts(city)
+        print('City: {0}'.format(city))
+        print('Districts: {0}'.format(districts))
+
+        # 获得每个区的板块, area: 板块
+        if city == r'sz' and district==r'futianqu':
+            areas = SZ_FUTIAN_AREAS
+            for k,v in SZ_FUTIAN_DISTRICT_AREAS.items():
+                area_dict[k] = v
+        elif city == r'sz' and district==r'nanshanqu':
+            areas = SZ_NANSHAN_AREAS
+            for k,v in SZ_NANSHAN_DISTRICT_AREAS.items():
+                area_dict[k] = v
+        else:
+            areas = list()
+            for district in districts:
+                areas_of_district = get_areas(city, district)
+                print('{0}: Area list:  {1}'.format(district, areas_of_district))
+                # 用list的extend方法,L1.extend(L2)，该方法将参数L2的全部元素添加到L1的尾部
+                areas.extend(areas_of_district)
+                # 使用一个字典来存储区县和板块的对应关系, 例如{'beicai': 'pudongxinqu', }
+                for area in areas_of_district:
+                    area_dict[area] = district
+        print("Area:", areas)
+        print("District and areas:", area_dict)
+
+        return areas
